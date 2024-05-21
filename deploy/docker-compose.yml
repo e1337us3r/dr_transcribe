@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+      target: prod
+    image: dr_transcribe:${DR_TRANSCRIBE_VERSION:-latest}
+    restart: always
+    env_file:
+    - .env
+    environment:
+      DR_TRANSCRIBE_HOST: 0.0.0.0
+  rabbitmq:
+    image: rabbitmq:3.12
+    ports:
+    - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+      target: dev
+    env_file:
+    - .env
+    command: celery -A dr_transcribe.celery worker -l INFO
+    depends_on:
+    - rabbitmq
